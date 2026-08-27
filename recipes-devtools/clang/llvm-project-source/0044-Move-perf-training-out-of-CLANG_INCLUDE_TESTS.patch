@@ -1,0 +1,60 @@
+From 57f932c1701f4f6901d39ee3b57a85fb016d7fde Mon Sep 17 00:00:00 2001
+From: "mark.yang" <mark.yang@lge.com>
+Date: Wed, 15 Apr 2026 08:29:40 +0900
+Subject: Move perf-training out of CLANG_INCLUDE_TESTS
+
+perf-training defines the generate-profdata target used by the PGO bootstrap build.
+However, it is currently enabled only when CLANG_INCLUDE_TESTS=ON.
+For distribution builds such as Yocto/OE, tests are usually disabled by setting this to OFF.
+
+But perf-training is a PGO utility, not a test target, and it is currently gated by that block.
+As a result, generate-profdata is unavailable to the PGO bootstrap build when
+CLANG_INCLUDE_TESTS=OFF.
+
+Move perf-training out of the CLANG_INCLUDE_TESTS block.
+
+This is safe because utils/perf-training/CMakeLists.txt adds targets only when
+LLVM_BUILD_INSTRUMENTED or CLANG_BOLT is enabled, so moving it out does not add
+any targets unless PGO or BOLT is actually in use.
+
+Also fix the path in lit.site.cfg.in for standalone builds.
+When llvm_src_dir is set from CMAKE_SOURCE_DIR, standalone clang builds end up
+using the clang source directory instead of the LLVM source directory.
+Set it to the proper LLVM source location instead.
+
+Upstream-Status: Submitted [https://github.com/llvm/llvm-project/pull/192163]
+Signed-off-by: mark.yang <mark.yang@lge.com>
+---
+ clang/CMakeLists.txt                      | 3 ++-
+ clang/utils/perf-training/lit.site.cfg.in | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/clang/CMakeLists.txt b/clang/CMakeLists.txt
+index b650b3b98..2820e2b54 100644
+--- a/clang/CMakeLists.txt
++++ b/clang/CMakeLists.txt
+@@ -549,9 +549,10 @@ if( CLANG_INCLUDE_TESTS )
+   if(CLANG_BUILT_STANDALONE)
+     umbrella_lit_testsuite_end(check-all)
+   endif()
+-  add_subdirectory(utils/perf-training)
+ endif()
+ 
++add_subdirectory(utils/perf-training)
++
+ option(CLANG_INCLUDE_DOCS "Generate build targets for the Clang docs."
+   ${LLVM_INCLUDE_DOCS})
+ if( CLANG_INCLUDE_DOCS )
+diff --git a/clang/utils/perf-training/lit.site.cfg.in b/clang/utils/perf-training/lit.site.cfg.in
+index da81ec21a..43579b027 100644
+--- a/clang/utils/perf-training/lit.site.cfg.in
++++ b/clang/utils/perf-training/lit.site.cfg.in
+@@ -9,7 +9,7 @@ config.test_source_root = "@CLANG_PGO_TRAINING_DATA@"
+ config.target_triple = "@LLVM_TARGET_TRIPLE@"
+ config.python_exe = "@Python3_EXECUTABLE@"
+ config.cmake_exe = "@CMAKE_COMMAND@"
+-config.llvm_src_dir ="@CMAKE_SOURCE_DIR@"
++config.llvm_src_dir = "@LLVM_MAIN_SRC_DIR@"
+ config.cmake_generator ="@CMAKE_GENERATOR@"
+ config.use_llvm_build = @CLANG_PGO_TRAINING_USE_LLVM_BUILD@
+ 
