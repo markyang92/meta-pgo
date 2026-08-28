@@ -27,6 +27,7 @@ inherit_defer native
 PR = "r0"
 
 TOOLCHAIN_NATIVE = "clang-stage1"
+TOOLCHAIN = "clang"
 
 OECMAKE_SOURCEPATH = "${S}/llvm"
 

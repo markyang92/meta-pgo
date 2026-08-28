@@ -13,3 +13,4 @@ PACKAGECONFIG[thin-lto-pgo] = "-DLLVM_PROFDATA_FILE=${STAGING_DATADIR_NATIVE}/cl
 PACKAGECONFIG:remove:class-target = "thin-lto-pgo"
 
 TOOLCHAIN_NATIVE = "${@bb.utils.contains('PACKAGECONFIG', 'thin-lto-pgo', 'clang-stage1', '${PREFERRED_TOOLCHAIN_NATIVE}', d)}"
+TOOLCHAIN:class-native = "${@bb.utils.contains('PACKAGECONFIG', 'thin-lto-pgo', 'clang', '${PREFERRED_TOOLCHAIN_NATIVE}', d)}"
