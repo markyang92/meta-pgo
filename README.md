@@ -13,6 +13,44 @@ original recipes are kept small.
 Timings below are `do_compile` from buildstats on an AMD Ryzen 9 7950X
 (16C/32T, `PARALLEL_MAKE = "-j 32"`), MACHINE qemuarm64.
 
+### gcc-cross
+
+PGO and LTO for gcc-cross.
+
+```
+local.conf
+
+GCC_CROSS_LTO_PGO = "1"
+```
+
+```
+gcc-cross-stage1 -> libgcc-stage1-initial -> glibc-stage1   training sysroot
+        |
+gcc-cross-profdata      instrumented gcc compiles sqlite3.c -> .gcda tree
+        |
+gcc-cross               rebuilt with -fprofile-use -flto=auto
+```
+
+gcc's `profiledbootstrap` only works for native compilers. The training
+therefore runs in a separate recipe.
+
+The instrumented compiler needs a target sysroot to compile anything.
+gcc-cross is built before glibc, so that sysroot does not exist yet.
+
+The stage1 recipes build a small separate gcc and glibc for training.
+They do not depend on the real gcc-cross, since that would be a cycle.
+
+The training input is the sqlite3 amalgamation: one large C file that
+needs only libc headers and builds with any gcc version.
+
+It is public domain and ships in the layer. The recipe shares gcc's
+work-shared source, so it cannot fetch it.
+
+| gcc-cross          | sqlite3 do_compile | linux-yocto 6.18 do_compile |
+|--------------------|--------------------|-----------------------------|
+| oe-core default    | 32.5s              | 66.2s                       |
+| GCC_CROSS_LTO_PGO  | 28.8s              | 61.4s                       |
+
 ### clang-native, llvm-native
 
 PGO and ThinLTO for clang-native and llvm-native.
