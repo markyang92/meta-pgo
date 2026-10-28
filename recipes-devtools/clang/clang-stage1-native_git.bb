@@ -35,12 +35,16 @@ DEPENDS = "llvm-tblgen-native"
 OECMAKE_SOURCEPATH = "${S}/llvm"
 
 # This clang is a tool dedicated to PGO builds; no optional features are needed.
+# It only ever targets the build host, so build that one backend: a hardcoded X86
+# left an aarch64 build host with a clang whose default triple was 'unknown', and
+# compiler-rt's configure failed every check ("unknown target triple 'unknown'").
+# An unsupported BUILD_ARCH fails at parse time rather than mid-build.
 EXTRA_OECMAKE = "\
     -DCMAKE_BUILD_TYPE=Release \
     -DLLVM_ENABLE_PROJECTS='clang;lld' \
     -DLLVM_ENABLE_RUNTIMES=compiler-rt \
     -DRUNTIMES_CMAKE_ARGS='-DCOMPILER_RT_BUILD_SANITIZERS=OFF;-DCOMPILER_RT_BUILD_XRAY=OFF;-DCOMPILER_RT_BUILD_LIBFUZZER=OFF;-DCOMPILER_RT_BUILD_MEMPROF=OFF;-DCOMPILER_RT_BUILD_CTX_PROFILE=OFF;-DCOMPILER_RT_BUILD_ORC=OFF;-DCOMPILER_RT_BUILD_GWP_ASAN=OFF' \
-    -DLLVM_TARGETS_TO_BUILD=X86 \
+    -DLLVM_TARGETS_TO_BUILD=${@{'x86_64': 'X86', 'aarch64': 'AArch64'}[d.getVar('BUILD_ARCH')]} \
     -DLLVM_TABLEGEN=${STAGING_BINDIR_NATIVE}/llvm-tblgen \
     -DCLANG_TABLEGEN=${STAGING_BINDIR_NATIVE}/clang-tblgen \
     -DLLVM_INCLUDE_TESTS=OFF \
