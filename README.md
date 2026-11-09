@@ -83,3 +83,28 @@ sqlite3 compiled with `PREFERRED_TOOLCHAIN_TARGET = "clang"`:
 oe-core master builds clang with Release and llvm with MinSizeRel since
 [d30524753955](https://git.openembedded.org/openembedded-core/commit/?id=d30524753955adad8a9adf5b6d01f546963dc45b).
 The table above predates that change.
+
+### Reproducibility
+
+Native and cross tools embed build paths, so they already differ
+between build directories without PGO. The PGO-built compilers
+differed too. The target packages they compiled did not.
+
+Checked with oe-selftest on qemuarm64. Its second build runs without
+sstate, so it trains and builds the PGO chain again from scratch.
+
+```
+local.conf
+
+OEQA_REPRODUCIBLE_TEST_TARGET = "<recipes>"
+OEQA_REPRODUCIBLE_TEST_PACKAGE = "ipk"
+```
+
+```
+oe-selftest -r reproducible.ReproducibleTests.test_reproducible_builds
+```
+
+| configuration                                         | OEQA_REPRODUCIBLE_TEST_TARGET    | ipk                  |
+|-------------------------------------------------------|----------------------------------|----------------------|
+| thin-lto-pgo, PREFERRED_TOOLCHAIN_TARGET = "clang"    | sqlite3                          | same=6, different=0  |
+| GCC_CROSS_LTO_PGO, PREFERRED_TOOLCHAIN_TARGET = "gcc" | sqlite3 glibc libgcc gcc-runtime | same=45, different=0 |
