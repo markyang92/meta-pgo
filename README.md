@@ -79,3 +79,7 @@ sqlite3 compiled with `PREFERRED_TOOLCHAIN_TARGET = "clang"`:
 | oe-core                   | Release          | 24.06s             |
 | thin-lto-pgo              | MinSizeRel       | 18.77s             |
 | thin-lto-pgo              | Release          | 18.29s             |
+
+oe-core master builds clang with Release and llvm with MinSizeRel since
+[d30524753955](https://git.openembedded.org/openembedded-core/commit/?id=d30524753955adad8a9adf5b6d01f546963dc45b).
+The table above predates that change.
